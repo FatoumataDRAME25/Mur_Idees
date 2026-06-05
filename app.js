@@ -1,5 +1,5 @@
 
-import { OPENROUTER_API_KEY } from "./env.js";
+const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
 
 const form = document.getElementById('formulaire');
 const idee = document.getElementById('count-idee');
@@ -141,15 +141,9 @@ function afficheridees(donne = listeidees) {
                         <p>${idee.description}</p>
 
                         <div class="mt-5 d-flex justify-content-between">
-                            <button onclick="supprimer(${idee.id})"
-                                    class="border border-danger rounded-3 bg-white py-1 px-2">
-                                Supprimer
-                            </button>
+                            <button onclick="supprimer(${idee.id})"class="border border-danger rounded-3 bg-white py-1 px-2">Supprimer</button>
 
-                            <button onclick="recupererdonneesmodifier(${idee.id})"
-                                    class="border border-primary rounded-3 bg-white py-1 px-3">
-                                Modifier
-                            </button>
+                            <button onclick="recupererdonneesmodifier(${idee.id})"class="border border-primary rounded-3 bg-white py-1 px-3">Modifier</button>
                         </div>
                     </div>
                 </div>
