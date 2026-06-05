@@ -1,5 +1,7 @@
 
-const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
+import { recupererIdees,updateIdees, createIdees, deleteIdees} from "./api/supabase";
+
+import { suggegerCategorie} from "./api/openrouter";
 
 const form = document.getElementById('formulaire');
 const idee = document.getElementById('count-idee');
@@ -14,7 +16,7 @@ let listeidees =[];
 let modifierId
 
 
-form.addEventListener('submit', (e) =>{
+form.addEventListener('submit', async (e) =>{
     e.preventDefault()
     const titre = titreInput.value;
     const categorie = categorieInput.value;
@@ -27,48 +29,31 @@ form.addEventListener('submit', (e) =>{
 
     //Modification de l'idee
     if (modifierId) {
-        listeidees = listeidees.map(idee => {
-            if (idee.id === modifierId) {
-                return {...idee, titre, categorie, description}
-            }
-            return idee;
-        });
+        
+        await updateIdees(modifierId,{titre,categorie,description})
+
+
         modifierId = null
+        
+          
     }
 
     // ajout d'idee
     else{
-        const idees = {
-            'id': Date.now(),
-            titre,
-            categorie,
-            description,
-            date: new Date().toLocaleString('fr-fr')
-        }
-        listeidees.push(idees)
         
+        await createIdees({titre, categorie, description})
     }
-    console.log(listeidees);
-    sauvegarderidees();
+    
+    await chargeridees()
     afficheridees()
     affichernombreidees()
     form.reset()
 })
-// Declenchement des evenements
 
-
-
-
-
-function sauvegarderidees(){
-    localStorage.setItem('listeidees', JSON.stringify(listeidees))
-}
-
-function chargeridees() {
-    const donnees = localStorage.getItem('listeidees')
-    if(donnees){
-        listeidees= JSON.parse(donnees)
-    }
+async function chargeridees() {
+    
+    listeidees = await recupererIdees()
+    
     afficheridees()
     affichernombreidees()
 }
@@ -134,7 +119,7 @@ function afficheridees(donne = listeidees) {
                     <div class="bg-white border rounded-4 shadow-sm p-4 ${style.border}">
                         <div class="mb-3 d-flex justify-content-between">
                             <strong class="${style.badge} p-2 rounded-5">${idee.categorie}</strong>
-                            <small>${idee.date}</small>
+                            <small>${idee.created_at}</small>
                         </div>
 
                         <h2 class="mb-3">${idee.titre}</h2>
@@ -168,17 +153,23 @@ function recupererdonneesmodifier(id) {
 
     modifierId = id
     document.getElementById('btn-submit').textContent = "Modifier l'idee"
+
+
+   
 }
 
-function supprimer(id){
+async function supprimer(id){
     const confirmer = confirm("Etes-vous sur de supprimer cette idee ?")
 
     if(!confirmer) {
         return;
     }
-    listeidees = listeidees.filter(idee => idee.id !==id)
+    /*listeidees = listeidees.filter(idee => idee.id !==id)*/
+    await deleteIdees(id)
+    
+          
 
-    sauvegarderidees();
+    await chargeridees()
     afficheridees();
     affichernombreidees();
 }
@@ -207,67 +198,7 @@ recherche.addEventListener('input', ideefiltrer);
 filtrecategorie.addEventListener('change', ideefiltrer);
 
 
-// Suggestion de la categorie par l'IA
-async function suggegerCategorie() {
 
-    const titre = document.getElementById("titre").value;
-    const description = document.getElementById("description").value;
-
-    const prompt = `
-        Tu es un classificateur d'idées.
-
-        Catégories :
-
-        - Pédagogie
-        - Événement
-        - Vie de campus
-        - Amélioration technique
-
-        Réponds uniquement avec une catégorie.
-
-        Titre : ${titre}
-
-        Description : ${description}
-    `;
-
-    const reponse = await fetch("https://openrouter.ai/api/v1/chat/completions", 
-        {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                "model": "nvidia/nemotron-3-super-120b-a12b:free",
-                "messages" :[
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                    
-                ]
-            })
-        }
-    );
-
-    
-
-    const data = await reponse.json();
-    console.log(data);
-    
-    if(data.error) {
-        console.error("Erreur OpenRouter: ", data.error.message);
-        return
-        
-    }
-    const categorie = data.choices[0].message.content;
-
-    console.log("Catégorie suggérée :",categorie);
-
-    document.getElementById("categorie").value = categorie;
-    
-    
-}
 
 
 document
