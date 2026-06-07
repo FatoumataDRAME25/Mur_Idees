@@ -2,6 +2,7 @@
 import { recupererIdees,updateIdees, createIdees, deleteIdees} from "./api/supabase";
 
 import { suggegerCategorie} from "./api/openrouter";
+import { validerTitre , validerDescription} from "./validation";
 
 const form = document.getElementById('formulaire');
 const idee = document.getElementById('count-idee');
@@ -16,15 +17,26 @@ let listeidees =[];
 let modifierId
 
 
+function validerFormulaire() {
+    const titreValide = validerTitre(titreInput);
+    const descriptionValide = validerDescription(descriptionInput);
+    return titreValide && descriptionValide
+    
+}
+
 form.addEventListener('submit', async (e) =>{
     e.preventDefault()
     const titre = titreInput.value;
     const categorie = categorieInput.value;
     const description = descriptionInput.value;
-    //document.getElementById('btn-submit').textContent = "Soumettre l'idée";
+   
+    if(!validerFormulaire()) {
+        return
+    }
 
     if(titre==="" || categorie==="" || description===""){
         alert("Tous les champs sont obligatoires")
+        return;
     }
 
     //Modification de l'idee
@@ -50,6 +62,7 @@ form.addEventListener('submit', async (e) =>{
     form.reset()
 })
 
+//Fonction permettant de chargees les donnees depuis supabase
 async function chargeridees() {
     
     listeidees = await recupererIdees()
@@ -58,8 +71,10 @@ async function chargeridees() {
     affichernombreidees()
 }
 
-window.addEventListener('DOMContentLoaded',
-    chargeridees
+window.addEventListener('DOMContentLoaded', async ()=>{
+
+    await chargeridees()
+}
 )
 
 // afficher la couleur de la categorie et bordure 
@@ -98,7 +113,7 @@ function stylecategorie(categorie) {
     }
 }
 
-
+//Fonction permettant d'afficher les idees sur l'interface
 function afficheridees(donne = listeidees) {
 
     let compteur = donne.length;
@@ -194,9 +209,16 @@ const ideefiltrer = () => {
     affichernombreidees();
 }
 
+
+
 recherche.addEventListener('input', ideefiltrer);
 filtrecategorie.addEventListener('change', ideefiltrer);
-
+titreInput.addEventListener('input', () =>{
+    validerTitre(titreInput);
+});
+descriptionInput.addEventListener('input', () =>{
+    validerDescription(descriptionInput);
+})
 
 
 
