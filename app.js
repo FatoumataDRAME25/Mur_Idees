@@ -12,6 +12,7 @@ const descriptionInput = document.getElementById('description');
 const recherche = document.getElementById('input-recherche');
 const filtrecategorie = document.getElementById('filtrer-categorie');
 const conteneuridee = document.getElementById('conteneur-idee');
+const statutIA = document.getElementById('ai-status')
 
 let listeidees =[];
 let modifierId
@@ -30,6 +31,8 @@ form.addEventListener('submit', async (e) =>{
     const categorie = categorieInput.value;
     const description = descriptionInput.value;
    
+    const btnSubmit = document.getElementById('btn-submit');
+
     if(!validerFormulaire()) {
         return
     }
@@ -38,28 +41,44 @@ form.addEventListener('submit', async (e) =>{
         alert("Tous les champs sont obligatoires")
         return;
     }
+     try {
 
-    //Modification de l'idee
-    if (modifierId) {
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = "Enregistrement...";
+
+        //Modification de l'idee
+        if (modifierId) {
+            
+            await updateIdees(modifierId,{titre,categorie,description})
+
+
+            modifierId = null
+            
+            
+        }
+
+        // ajout d'idee
+        else{
+            
+            await createIdees({titre, categorie, description})
+        }
         
-        await updateIdees(modifierId,{titre,categorie,description})
-
-
-        modifierId = null
+        await chargeridees()
         
-          
+        form.reset();}
+    catch (error) {
+
+        console.error(error);
+        alert("Une erreur est survenue.");
+
+    } 
+    finally {
+
+        btnSubmit.disabled = false;
+        btnSubmit.textContent = "Soumettre l'idée";
+        console.log(btnSubmit.disabled);
+
     }
-
-    // ajout d'idee
-    else{
-        
-        await createIdees({titre, categorie, description})
-    }
-    
-    await chargeridees()
-    afficheridees()
-    affichernombreidees()
-    form.reset()
 })
 
 //Fonction permettant de chargees les donnees depuis supabase
@@ -125,31 +144,32 @@ function afficheridees(donne = listeidees) {
     }
     conteneuridee.innerHTML = "";
 
+    let html = "";
     donne.forEach(idee => {
         const style = stylecategorie(idee.categorie)
-
-        conteneuridee.innerHTML += `
+        
+        html += `
             
-                <div class="col-md-6">
-                    <div class="bg-white border rounded-4 shadow-sm p-4 ${style.border}">
-                        <div class="mb-3 d-flex justify-content-between">
-                            <strong class="${style.badge} p-2 rounded-5">${idee.categorie}</strong>
-                            <small>${idee.created_at}</small>
-                        </div>
+                    <div class="col-md-6">
+                        <div class="bg-white border rounded-4 shadow-sm p-4 ${style.border}">
+                            <div class="mb-3 d-flex justify-content-between">
+                                <strong class="${style.badge} p-2 rounded-5">${idee.categorie}</strong>
+                                <small>${idee.created_at}</small>
+                            </div>
 
-                        <h2 class="mb-3">${idee.titre}</h2>
-                        <p>${idee.description}</p>
+                            <h2 class="mb-3">${idee.titre}</h2>
+                            <p>${idee.description}</p>
 
-                        <div class="mt-5 d-flex justify-content-between">
-                            <button onclick="supprimer(${idee.id})"class="border border-danger rounded-3 bg-white py-1 px-2">Supprimer</button>
+                            <div class="mt-5 d-flex justify-content-between">
+                                <button onclick="supprimer(${idee.id})"class="border border-danger rounded-3 bg-white py-1 px-2">Supprimer</button>
 
-                            <button onclick="recupererdonneesmodifier(${idee.id})"class="border border-primary rounded-3 bg-white py-1 px-3">Modifier</button>
+                                <button onclick="recupererdonneesmodifier(${idee.id})"class="border border-primary rounded-3 bg-white py-1 px-3">Modifier</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-
-        `
+                `
     });
+    conteneuridee.innerHTML = html;
    
 }
 
@@ -185,8 +205,7 @@ async function supprimer(id){
           
 
     await chargeridees()
-    afficheridees();
-    affichernombreidees();
+
 }
 
 
@@ -225,7 +244,31 @@ descriptionInput.addEventListener('input', () =>{
 
 document
     .getElementById("description")
-    .addEventListener("blur", suggegerCategorie);
+    .addEventListener("blur",  async () => {
+
+        const titre = titreInput.value.trim();
+        const description = descriptionInput.value.trim();
+
+        if (titre.length < 3 || description.length < 20) {
+            return;
+        }
+
+        try {
+
+            statutIA.classList.remove('d-none');
+
+            await suggegerCategorie();
+
+            statutIA.textContent = "Catégorie suggérée avec succès";
+
+        } catch (error) {
+
+            console.error(error);
+        } finally {
+
+            statutIA.classList.add('d-none');
+        }
+    });
 
 
 window.recupererdonneesmodifier = recupererdonneesmodifier
