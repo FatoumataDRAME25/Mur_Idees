@@ -64,7 +64,7 @@ export function validerDescription(input) {
         return false
     }
 
-    else if(description.lenght > 300) {
+    else if(description.length > 300) {
         afficherErreur(input, "Ce champ doit contenir au maximun 600 caractères")
         return false
     }
